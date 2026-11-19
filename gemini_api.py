@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""Gemini Web API — instance KHUSUS untuk Hermes agent.
-Dibangun di atas versi multi-akun & multi-tab per room (mencegah tabrakan prompt,
-Error 524, dan kerusakan blok kode).
-
-Perbedaan vs versi umum:
-- Semua path data mengikuti user yang menjalankan (env GEMINI_DATA, default ~/gemini-data).
-- Env DEFAULT_ROOM: kalau di-set dan request tidak mengirim X-Room-ID, semua chat
-  masuk ke 1 room tetap → Gemini web MENGENAT percakapan sebelumnya (sesi tunggal).
-  Hermes selalu mengirim full history via messages, ditambah room tetap ini =
-  memori ganda (history API + memori thread web).
-"""
 import asyncio, json, os, re, time
 from typing import Optional
 from fastapi import FastAPI, Header, HTTPException, Request
@@ -96,8 +85,6 @@ def load_accounts():
         try:
             raw = json.loads(text)
         except Exception:
-            # Bukan JSON → perlakukan isi file sebagai cookie header mentah
-            # format: "SID=...; HSID=...; NID=..." → dict {name: value}
             raw = {}
             for part in text.replace("\n", ";").split(";"):
                 if "=" in part:
@@ -392,7 +379,7 @@ async def oai_chat(request: Request, authorization: Optional[str] = Header(defau
     else:
         prompt = _messages_to_prompt(msgs)
 
-    want_stream = False  # selalu balas 1 JSON utuh: tanpa ping ":" dan tanpa [DONE]
+    want_stream = False  
     now = int(time.time())
     cid = "chatcmpl-gw-" + os.urandom(6).hex()
 
